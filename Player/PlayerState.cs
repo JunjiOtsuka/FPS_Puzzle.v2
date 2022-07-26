@@ -1,0 +1,22 @@
+﻿public enum PlayerState
+{
+    WALLRUNNING,
+    WALLCLIMBING,
+    WALLSTICK,
+    WALLJUMP,
+    IDLE,
+    CROUCH,
+    CROUCHWALK,
+    SLIDE,
+    WALK,
+    RUN,
+    JUMP, 
+    wallStick, 
+    wallClimb, 
+    wallRun, 
+    wallJump, 
+    MIDAIR, 
+    zipline, 
+    zipJump, 
+    grappling
+}
