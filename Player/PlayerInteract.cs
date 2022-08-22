@@ -8,9 +8,9 @@ public class PlayerInteract : MonoBehaviour
     public float rayDistance;
     public float distanceFromPlayer;
 
-    public bool IsInteracting;
+    public static bool IsInteracting;
     public Transform _Camera;
-    
+
     // Update is called once per frame
     void Update()
     {

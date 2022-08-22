@@ -13,7 +13,7 @@ public class BoxColliderGizmo : MonoBehaviour
     	{
             if (action == null) return;
             
-                action.Interact();
+                // action.Interact();
 
     	}
     }

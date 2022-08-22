@@ -14,6 +14,8 @@ public class PlayerMovementV2 : MonoBehaviour
     public static InputAction leftClick;
     public static InputAction rightClick;
     public static InputAction options;
+    public static InputAction Weapon1;
+    public static InputAction Weapon2;
     public static PlayerInput _PlayerInput;
     public PlayerStateManager playerStateManager;
     public GameObject UI_Master;
@@ -28,12 +30,13 @@ public class PlayerMovementV2 : MonoBehaviour
 
     [Header("Crouching")]
     public float crouchSpeed;
+    public static float maxHeight = 3;
     CapsuleCollider cc;
 
     [Header("Jumping")]
     public float jumpSpeed = 100f;
 
-    [Header("WallRun")]
+    [Header("WallRunSpeed")]
     public float wallRunForce;
     [Header("WallJump")]
     public float wallJumpUpForce;
@@ -47,6 +50,7 @@ public class PlayerMovementV2 : MonoBehaviour
     public float camTiltTime;
     public float tilt { get; private set; }
     public bool cameraTiltProgress = false;
+    public float wallRunCameraTilt, maxWallRunCameraTilt, wallRunningCameraTiltMultiplier;
     
     [Header("Camera")]
     public float maxUpDown;
@@ -68,11 +72,14 @@ public class PlayerMovementV2 : MonoBehaviour
     //Interacting
     bool IsInteracting = false;
 
+    [Header("CurrentlyEquipped")]
+    public CurrentlyEquipped _CurrentlyEquipped;
+
     private void Awake()
     {
-        // playerInputAction = new PlayerInputAction();   
+ 
         _PlayerInput = GetComponent<PlayerInput>();   
-        // _UICanvasManager = GetComponentInChildren<UICanvasManager>();
+        _CurrentlyEquipped = GetComponent<CurrentlyEquipped>();
 
         _rb = GetComponent<Rigidbody>();
         cc = GetComponent<CapsuleCollider>();
@@ -86,6 +93,8 @@ public class PlayerMovementV2 : MonoBehaviour
         leftClick = InputManager.inputActions.Player.Fire1;
         rightClick = InputManager.inputActions.Player.Fire2;
         options = InputManager.inputActions.Player.Options;
+        Weapon1 = InputManager.inputActions.Player.Weapon1;
+        Weapon2 = InputManager.inputActions.Player.Weapon2;
         InputManager.inputActions.Player.MouseX.performed += ctx => mouseInput.x = ctx.ReadValue<float>();
         InputManager.inputActions.Player.MouseY.performed += ctx => mouseInput.y = ctx.ReadValue<float>();
         InputManager.inputActions.Player.Run.performed += DoRun;
@@ -99,11 +108,20 @@ public class PlayerMovementV2 : MonoBehaviour
         initialSpeed = walkSpeed;
         crouchSpeed = initialSpeed / 2;
         runSpeed = initialSpeed * 2;
-        InputManager.ToggleActionMap(InputManager.inputActions.Player);
+        PlayerActionMapManager.ToggleActionMap(InputManager.inputActions.Player, "Player");
+        // InputManager.ToggleActionMap(InputManager.inputActions.Player);
+        DisableCursor();
+        // if (WeaponStateManager.WeaponState == WeaponState.BAREHAND) EnableBareHand();
+        // if (WeaponStateManager.WeaponState == WeaponState.GRAPPLINGHOOK) EnableGrapple();
     }
 
     private void Update()
     {
+        if (PlayerActionMapManager.playerInput.currentActionMap.name != "Player") 
+        {
+            return;
+        }
+
         if (mouseInput.x != 0 || mouseInput.y != 0) 
         {
             DoLook();
@@ -119,30 +137,48 @@ public class PlayerMovementV2 : MonoBehaviour
         if (crouchAction.IsPressed()) 
         {
             DoStartCrouch();
-        }
-        if (crouchAction.WasReleasedThisFrame()) 
+        } 
+        else
         {
-            DoStopCrouch();
+            if (CrouchDetector.canStandUp) {
+                DoStopCrouch();
+            }
         }
         if (!PlayerStateManager.checkGroundState(GroundState.ONGROUND))
         {
             SetMaxVelocity(20f);
         }
-        if (PlayerStateManager.checkPlayerState(PlayerState.WALLRUNNING)) {
-            DoWallrun();
-            StartCoroutine(DoCameraTilt());
-        }
-        if (playerStateManager.CanWallJump && jumpAction.WasPerformedThisFrame()) {
-            DoWallJump();
-        }
-        if (PlayerStateManager.WRState == WallRunState.UNABLE || 
-            PlayerStateManager.wallState == WallState.NOWALL ||
-            PlayerStateManager.state != PlayerState.WALLRUNNING)
+        if (PlayerStateManager.checkPlayerState(PlayerState.WALLRUNNING)) 
         {
-            StopWallRun();
-            StartCoroutine(StopCameraTilt());
+            DoWallrun();
         }
-
+        if (PlayerStateManager.checkWallRunState(WallRunState.ABLE)) 
+        {
+            DoCameraTilt();
+            // StartCameraTilt();
+        }
+        else if (PlayerStateManager.checkWallRunState(WallRunState.UNABLE) && tilt != 0)
+        {
+            StopCameraTilt();
+            // CancelCameraTilt();
+        }
+        if (PlayerStateManager.CanWallJump && jumpAction.WasPerformedThisFrame()) {
+            DoWallJump();
+            // if (!playerStateManager.IsWallRunning)
+            // {
+            //     StopCameraTilt();
+            // }
+        }
+        if (PlayerStateManager.WRState == WallRunState.UNABLE && 
+            PlayerStateManager.wallState == WallState.NOWALL &&
+            PlayerStateManager.state == PlayerState.WALLRUNNING)
+        {
+            DoWallJump();
+            // if (!playerStateManager.IsWallRunning)
+            // {
+            //     StopCameraTilt();
+            // }
+        }
         if (!PlayerUsingUI && options.WasPerformedThisFrame()) 
         {
             OnEnterOption();
@@ -151,6 +187,17 @@ public class PlayerMovementV2 : MonoBehaviour
         {
             OnExitOption();
         }
+        if (Weapon1.WasPerformedThisFrame())
+        {
+            _CurrentlyEquipped.EnableBareHand();
+        }
+        if (Weapon2.WasPerformedThisFrame())
+        {
+            _CurrentlyEquipped.EnableGrapple();
+        }
+
+        //Update camera tilt
+    	mainCam.transform.localRotation = Quaternion.Euler(limitVertCameraRotation, 0, tilt);
     }
 
     private void FixedUpdate() 
@@ -158,14 +205,6 @@ public class PlayerMovementV2 : MonoBehaviour
         if (movement.ReadValue<Vector2>().x != 0 || movement.ReadValue<Vector2>().y != 0) {
             OnWalk();
         }
-
-        // Vector3 xzVel = new Vector3(_rb.velocity.x, 0, _rb.velocity.z);
-        // Vector3 yVel = new Vector3(0, _rb.velocity.y, 0);
-
-        // xzVel = Vector3.ClampMagnitude(xzVel, 10);
-        // yVel = Vector3.ClampMagnitude(yVel, 50);
-
-        // _rb.velocity = xzVel + yVel;
     }
 
     private void DoLook() 
@@ -176,7 +215,6 @@ public class PlayerMovementV2 : MonoBehaviour
         transform.Rotate(0, mouseInput.x * mouseSensitivity, 0);
     	limitVertCameraRotation -= mouseInput.y * mouseSensitivity;
     	limitVertCameraRotation = Mathf.Clamp(limitVertCameraRotation, -maxUpDown, maxUpDown);
-    	mainCam.transform.localRotation = Quaternion.Euler(limitVertCameraRotation, 0, tilt);
     }
 
     private void OnWalk()
@@ -187,11 +225,16 @@ public class PlayerMovementV2 : MonoBehaviour
         moveDirection = (transform.right * movement.ReadValue<Vector2>().x + transform.forward * movement.ReadValue<Vector2>().y).normalized;
         _rb.AddForce(moveDirection * walkSpeed, ForceMode.Acceleration);
 
+        if (PlayerStateManager.checkPlayerState(PlayerState.WALLRUNNING)) {
+            SetMaxVelocity(50f);
+        }
+
         if (PlayerStateManager.state == PlayerState.RUN) {
             SetMaxVelocity(20f);
         } else if (PlayerStateManager.state == PlayerState.WALK) {
             SetMaxVelocity(10f);
-        }
+        } 
+        
     }
 
     private void OnRun()
@@ -217,7 +260,7 @@ public class PlayerMovementV2 : MonoBehaviour
 
     private void DoStopCrouch()
     {
-        cc.height = cc.height * 2;
+        cc.height = 3;
         cc.center = new Vector3 (0f, cc.center.y * 2, 0f);
         mainCam.transform.position = new Vector3(transform.position.x, transform.position.y + 2, transform.position.z);
         walkSpeed = initialSpeed;
@@ -254,58 +297,41 @@ public class PlayerMovementV2 : MonoBehaviour
         
         _rb.AddForce(-wallNormal * 100, ForceMode.Force);
 
-        CameraTiltInProgress();
+        PlayerStateManager.IsWallRunning = true;
+
     }
 
-    public bool CameraTiltInProgress() 
+    public void DoCameraTilt() 
     {
-        return (tilt == camTilt || tilt == -camTilt);
-    }
-
-    public bool CameraTiltFinished() 
-    {
-        return (tilt == 0);
-    }
-
-    public IEnumerator DoCameraTilt() 
-    {
-        elapsedTime += Time.deltaTime;
-        float percentageComplete = elapsedTime / camTiltTime;
-
-        // Debug.Log($"START: tilt: {tilt} camtilt: {camTilt}");
         if (PlayerStateManager.wallState == WallState.RIGHTWALL) 
         {
-            tilt = Mathf.Lerp(tilt, camTilt, Mathf.SmoothStep(0, 1, percentageComplete));
+            tilt = Mathf.Lerp(tilt, camTilt, camTiltTime * Time.deltaTime);
         } 
-        else if (PlayerStateManager.wallState == WallState.LEFTWALL) 
+        
+        if (PlayerStateManager.wallState == WallState.LEFTWALL) 
         {
-            tilt = Mathf.Lerp(tilt, -camTilt, Mathf.SmoothStep(0, 1, percentageComplete));
+            tilt = Mathf.Lerp(tilt, -camTilt, camTiltTime * Time.deltaTime);
         }
-        yield return new WaitUntil(() => CameraTiltInProgress());
     }
 
-    public IEnumerator StopCameraTilt()
+    public void StopCameraTilt()
     {
-        elapsedTime += Time.deltaTime;
-        float percentageComplete = elapsedTime / camTiltTime;
-        tilt = Mathf.Lerp(tilt, 0, Mathf.SmoothStep(0, 1, percentageComplete));
-        // Debug.Log($"STOP: tilt: {tilt} camtilt: {camTilt}");
-        yield return new WaitUntil(() => CameraTiltFinished());
+        tilt = Mathf.Lerp(tilt, 0, camTiltTime * Time.deltaTime);
     }
 
     public void DoWallJump() {
         Vector3 wallNormal = PlayerStateManager.wallState == WallState.RIGHTWALL ? WallDetection.rightWallhit.normal : WallDetection.leftWallhit.normal;
         Vector3 forceToApply = transform.forward * wallJumpForwardForce + transform.up * wallJumpUpForce + wallNormal * wallJumpSideForce;
-
-        _rb.AddForce(forceToApply * wallRunForce * wallRunForceMultiplier, ForceMode.Impulse);
-
+        _rb.AddForce(forceToApply * wallRunForceMultiplier, ForceMode.Impulse);
         StopWallRun();
-        CameraTiltFinished();
     }
 
     public void StopWallRun() {
         _rb.useGravity = true;
-        CameraTiltFinished();
+        PlayerStateManager.IsWallRunning = false;
+        playerStateManager.UpdatePlayerState(PlayerState.WALLJUMP);
+        playerStateManager.UpdateJumpState(JumpState.WALLJUMP);
+        StopCameraTilt();
     }
 
     private void DoFire1(InputAction.CallbackContext callback) 
@@ -332,21 +358,36 @@ public class PlayerMovementV2 : MonoBehaviour
     {
         UI_Master.SetActive(true);
         _UICanvasManager.UIEnableButtons("UI:Options");
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
+        _UICanvasManager.UIEnableButtons("UI:Background");
+        EnableCursor();
         PlayerUsingUI = true;
-        InputManager.ToggleActionMap(InputManager.inputActions.UI);
+        PlayerActionMapManager.ToggleActionMap(InputManager.inputActions.UI, "UI");
+        // InputManager.ToggleActionMap(InputManager.inputActions.UI);
+        InputManager.inputActions.Player.Disable();
+        InputManager.inputActions.UI.Enable();
     }
 
     private void OnExitOption()
     {
         UI_Master.SetActive(false);
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        DisableCursor();
         PlayerUsingUI = false;
-        InputManager.ToggleActionMap(InputManager.inputActions.Player);
+        PlayerActionMapManager.ToggleActionMap(InputManager.inputActions.Player, "Player");
+        // InputManager.ToggleActionMap(InputManager.inputActions.Player);
         InputManager.inputActions.Player.Enable();
         InputManager.inputActions.UI.Disable();
+    }
+
+    private void EnableCursor()
+    {
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+    }
+
+    private void DisableCursor()
+    {
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
     
     private void SetMaxVelocity(float maxGroundVel) 

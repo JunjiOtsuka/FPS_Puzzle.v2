@@ -21,7 +21,6 @@ public class SingleTrigger : MonoBehaviour
         if (other.tag == "Player" ||
             other.tag == "Cube")
         {
-            Debug.Log("player entered");
             SwitchWiredTo.GetComponent<Animator>().SetBool("OpenDoor", true);
         }
     }
@@ -31,7 +30,6 @@ public class SingleTrigger : MonoBehaviour
         if (other.tag == "Player" ||
             other.tag == "Cube")
         {
-            Debug.Log("player stayed");
             SwitchWiredTo.GetComponent<Animator>().SetBool("OpenDoor", true);
         }
     }
@@ -41,7 +39,6 @@ public class SingleTrigger : MonoBehaviour
         if (other.tag == "Player" ||
             other.tag == "Cube")
         {
-            Debug.Log("player exited");
             StartCoroutine(OnSwitchOff());
         }
     }

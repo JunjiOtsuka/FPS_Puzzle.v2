@@ -9,7 +9,6 @@ public class JumpPad : MonoBehaviour
     void OnCollisionEnter(Collision other) {
         if (other.gameObject.CompareTag("Player"))
         {
-            Debug.Log("check");
             other.gameObject.GetComponent<Rigidbody>().AddForce(transform.up * bounce, ForceMode.VelocityChange);
         }
     }

@@ -1,44 +1,44 @@
 ﻿using System.IO;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class SaveAndLoad : MonoBehaviour
 {
-    private PlayerData playerData;
+    public static PlayerData playerData;
+    public static PlayerData data;
 
-    private string path = "";
-    private string persistentPath = "";
+    private static string path = "";
+    private static string persistentPath = "";
 
-    // Start is called before the first frame update
-    void Start()
+    void Awake()
     {
-        CreatePlayerData();
+        DontDestroyOnLoad(this.gameObject);
+        playerData = new PlayerData();
+
         SetPaths();
+
+        if (File.Exists(path))
+        {
+            LoadData();
+        }
     }
 
-    private void CreatePlayerData()
-    {
-        playerData = new PlayerData("saveScene", "saveSubscene");
-    }
-
-    private void SetPaths()
+    private static void SetPaths()
     {
         path = Application.dataPath + Path.AltDirectorySeparatorChar + "SaveData.json";
         persistentPath = Application.persistentDataPath + Path.AltDirectorySeparatorChar + "SaveData.json";
     }
 
-    // Update is called once per frame
-    void Update()
+    public void UpdatePlayerData()
     {
-        if (Input.GetKeyDown(KeyCode.O))
-            SaveData();
-
-        if (Input.GetKeyDown(KeyCode.L))
-            LoadData();
+        SaveData();
     }
 
-    public void SaveData()
+    public static void SaveData()
     {
-        string savePath = persistentPath;
+        string savePath = path; //saves in asset folder
+        // string savePath = persistentPath;
 
         Debug.Log("Saving Data at " + savePath);
         string json = JsonUtility.ToJson(playerData);
@@ -50,14 +50,25 @@ public class SaveAndLoad : MonoBehaviour
         }
     }
 
-    public void LoadData()
+    public static PlayerData LoadData()
     {
-        using (StreamReader reader = new StreamReader(persistentPath))
+        if (path == "") return null;
+        
+        using (StreamReader reader = new StreamReader(path))
+        // using (StreamReader reader = new StreamReader(persistentPath))
         {
             string json = reader.ReadToEnd();
 
-            PlayerData data = JsonUtility.FromJson<PlayerData>(json);
-            Debug.Log(data.SavedScene.ToString());
+            data = JsonUtility.FromJson<PlayerData>(json);
+            Debug.Log(data.masterVolume);
         }
+
+        return data;
     }
+
+    // void OnDisable()
+    // {
+    //     if (MySceneManager.currentScene == "MainMenu") return;
+    //     SaveData();
+    // }
 }

@@ -9,7 +9,6 @@ public class GravityLift : MonoBehaviour
     void OnTriggerEnter(Collider other) {
         if (other.gameObject.CompareTag("Player"))
         {
-            Debug.Log("upon enter");
             var rb = other.gameObject.GetComponent<Rigidbody>();
             rb.useGravity = false;
         }
@@ -18,7 +17,6 @@ public class GravityLift : MonoBehaviour
     void OnTriggerStay(Collider other) {
         if (other.gameObject.CompareTag("Player"))
         {
-            Debug.Log("upon stay");
             var rb = other.gameObject.GetComponent<Rigidbody>();
             rb.AddForce(transform.forward * liftForce, ForceMode.Acceleration);
         }
@@ -26,7 +24,6 @@ public class GravityLift : MonoBehaviour
     void OnTriggerExit(Collider other) {
         if (other.gameObject.CompareTag("Player"))
         {
-            Debug.Log("upon exit");
             var rb = other.gameObject.GetComponent<Rigidbody>();
             rb.useGravity = true;
         }

@@ -4,25 +4,60 @@ using UnityEngine;
 
 public class Switch : MonoBehaviour, IInteractable
 {
+    public enum SwitchType {
+        DOOR, 
+        FLOOR
+    }
+    public SwitchType _SwitchType;
     public bool IsInteracting = false;
-    public bool SwitchOn = false;
+    public static bool SwitchOn = false;
     public GameObject SwitchWiredTo;
+    public Transform origin;
+    public Transform target;
     public float DoorTimer = 3f;
+    public static bool FloorSwitchOn = false;
+    public FloorRotate _FloorRotate;
 
     public void Interact()
     {
-        if (!SwitchOn && PlayerMovementV2.interactClick.WasPerformedThisFrame())
+        // if (!SwitchOn && PlayerMovementV2.interactClick.WasPerformedThisFrame())
+        // {
+        //     if (_SwitchType == SwitchType.DOOR) OnSwitchOn();
+        //     if (_SwitchType == SwitchType.FLOOR) OnFloorSwitchOn();
+        // } 
+        // if (SwitchOn) {
+        //     if (_SwitchType == SwitchType.DOOR) StartCoroutine(OnSwitchOff());
+        //     if(PlayerMovementV2.interactClick.WasPerformedThisFrame())
+        //     {
+        //         if (_SwitchType == SwitchType.FLOOR) OnFloorSwitchOff();
+        //     }
+        // }
+
+        if (_SwitchType == SwitchType.DOOR)
         {
-            OnSwitchOn();
-        } 
-        if (SwitchOn) {
-            StartCoroutine(OnSwitchOff());
+            if (!SwitchOn && PlayerMovementV2.interactClick.WasPerformedThisFrame())
+            {
+                OnSwitchOn();
+            } 
+            if (SwitchOn) {
+                StartCoroutine(OnSwitchOff());
+            }
+        }
+        if (_SwitchType == SwitchType.FLOOR) 
+        {
+            if (!SwitchOn && PlayerMovementV2.interactClick.WasPerformedThisFrame()) 
+            {
+                FloorSwitchOn = true;
+            } 
+            // else if (SwitchOn && PlayerMovementV2.interactClick.WasPerformedThisFrame())
+            // {
+            //     FloorRotate.OnFloorSwitchOff();
+            // } 
         }
     }
 
     public void OnSwitchOn()
     {
-        Debug.Log("SwitchOn");
         SwitchWiredTo.GetComponent<Animator>().SetBool("OpenDoor", true);
         SwitchOn = true;
     }
@@ -30,7 +65,6 @@ public class Switch : MonoBehaviour, IInteractable
     IEnumerator OnSwitchOff()
     {
         yield return new WaitForSeconds(DoorTimer);
-        Debug.Log("SwitchOff");
         SwitchWiredTo.GetComponent<Animator>().SetBool("OpenDoor", false);
         SwitchOn = false;
     }

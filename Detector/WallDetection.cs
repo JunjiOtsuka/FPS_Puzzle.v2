@@ -9,16 +9,15 @@ public class WallDetection : MonoBehaviour
     public float sideWallRayDistance;
     public float frontBackWallRayDistance;
 
-    public bool leftWall;
-    public bool rightWall;
-    public bool frontWall;
-    public bool backWall;
+    public static bool leftWall;
+    public static bool rightWall;
+    public static bool frontWall;
+    public static bool backWall;
 
     public static RaycastHit leftWallhit;
     public static RaycastHit rightWallhit;
     public static RaycastHit frontWallhit;
     public static RaycastHit backWallhit;
-
 
     // Update is called once per frame
     void Update()

@@ -6,13 +6,17 @@ using UnityEngine.EventSystems;
 public class UICanvasManager : MonoBehaviour
 {
     public EventSystem _events; 
+    public GameObject parentOfKeybinds;
     public List<GameObject> UIList;
+    public static float loadedKeybinds;
+    bool KeybindsLoaded = false;
 
     void OnEnable()
     {
-        foreach(GameObject UI in UIList) 
+        UIEnableButtons("UI:Character");
+        if (loadedKeybinds >= parentOfKeybinds.transform.childCount)
         {
-            UI.SetActive(false);
+            DisableOptionUI();
         }
     }
 
@@ -26,4 +30,21 @@ public class UICanvasManager : MonoBehaviour
             }
         }
     }
+
+    public void DisableOptionUI()
+    {
+        foreach(GameObject UI in UIList) 
+        {
+            UI.SetActive(false);
+        }
+        PlayerActionMapManager.ToggleActionMap(InputManager.inputActions.Player, "Player");
+        InputManager.inputActions.Player.Enable();
+        InputManager.inputActions.UI.Disable();
+    }
+
+    // void OnDisable()
+    // {
+    //     PlayerActionMapManager.ToggleActionMap(InputManager.inputActions.Player, "Player");
+    //     InputManager.inputActions.Player.Enable();
+    // }
 }

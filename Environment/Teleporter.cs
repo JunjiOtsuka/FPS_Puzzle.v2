@@ -4,16 +4,14 @@ using UnityEngine;
 
 public class Teleporter : MonoBehaviour
 {
-    public Vector3 teleportDestination;
+    public Transform teleportDestination;
 
 	void OnTriggerEnter(Collider other)
     {
-    	if (other.name == "Player")
+    	if (other.tag == "Player")
     	{
-	    	// other.transform.position = teleportDestination;
-	    	other.gameObject.GetComponent<CharacterController>().enabled = false;
-			other.gameObject.GetComponent<CharacterController>().transform.position = teleportDestination;
-			other.gameObject.GetComponent<CharacterController>().enabled = true;
+			other.transform.position = teleportDestination.position;
+			other.transform.rotation = teleportDestination.rotation;
     	}
     }
 }

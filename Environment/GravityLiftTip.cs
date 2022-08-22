@@ -9,7 +9,6 @@ public class GravityLiftTip : MonoBehaviour
     void OnTriggerEnter(Collider other) {
         if (other.gameObject.CompareTag("Player"))
         {
-            Debug.Log("upon enter");
             var rb = other.gameObject.GetComponent<Rigidbody>();
             rb.useGravity = false;
             rb.constraints = RigidbodyConstraints.FreezePositionY;
@@ -19,7 +18,6 @@ public class GravityLiftTip : MonoBehaviour
     void OnTriggerStay(Collider other) {
         if (other.gameObject.CompareTag("Player"))
         {
-            Debug.Log("upon stay");
             var rb = other.gameObject.GetComponent<Rigidbody>();
             rb.useGravity = false;
             rb.constraints = RigidbodyConstraints.FreezePositionY;
@@ -29,7 +27,6 @@ public class GravityLiftTip : MonoBehaviour
     void OnTriggerExit(Collider other) {
         if (other.gameObject.CompareTag("Player"))
         {
-            Debug.Log("upon exit");
             var rb = other.gameObject.GetComponent<Rigidbody>();
             rb.useGravity = true;
             rb.constraints = RigidbodyConstraints.FreezeRotation;

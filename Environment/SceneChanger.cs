@@ -1,4 +1,6 @@
-﻿using System.Collections;
+﻿using TMPro;
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -10,10 +12,16 @@ public class SceneChanger : MonoBehaviour
 
     public string sceneToLoad;
 
+    public TMP_InputField inputField;
+
     GameObject player;
 
     /*Loading Bar Slider*/
     Slider slider;
+    [Header("Reset Game State")]
+    [SerializeField] private Button restartButton;
+    [Header("Quit Game")]
+    [SerializeField] private Button quitButton;
 
     void Awake()
     {
@@ -23,6 +31,7 @@ public class SceneChanger : MonoBehaviour
     void Start()
     {
         player = GameObject.Find("Player");
+        // _SaveAndLoad = GameObject.Find("SaveLoadData").GetComponent<SaveAndLoad>();
     }
 
     public void OnPlayButtonClicked()
@@ -30,7 +39,42 @@ public class SceneChanger : MonoBehaviour
         StartCoroutine(LoadYourAsyncScene(sceneToLoad));
     }
 
-    public void OnQuitButtonClicked()
+    public void OnNewGameButton()
+    {
+        SceneManager.LoadScene("Tutorial");
+    }
+
+    public void OnLevelButton()
+    {
+        SceneManager.LoadScene("Level" + inputField.text);
+    }
+
+
+    public void OnSaveButton()
+    {
+        if (MySceneManager.currentScene == "MainMenu") return;
+        SaveAndLoad.playerData.SavedScene = MySceneManager.currentScene;
+        SaveAndLoad.SaveData();
+    }
+
+    public void OnLoadButton()
+    {
+        PlayerData data = SaveAndLoad.LoadData();
+        Debug.Log(SaveAndLoad.data.SavedScene);
+        SceneManager.LoadScene(data.SavedScene);
+    }
+
+    public void DoRestart()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
+        public void DoMainMenu()
+    {
+        SceneManager.LoadScene("MainMenu");
+    }
+
+    public void DoQuit()
     {
         Application.Quit();
     }
@@ -43,17 +87,10 @@ public class SceneChanger : MonoBehaviour
         }
     }
 
-    IEnumerator LoadYourAsyncScene(string sceneToLoad)
+    public IEnumerator LoadYourAsyncScene(string sceneToLoad)
     {
-        // Set the current Scene to be able to unload it later
         Scene currentScene = SceneManager.GetActiveScene();
 
-        //Set the current Scene Name variable to keep track of where the player came from
-
-        // The Application loads the Scene in the background as the current Scene runs.
-        // This is particularly good for creating loading screens.
-        // You could also load the Scene by using sceneBuildIndex. In this case Scene2 has
-        // a sceneBuildIndex of 1 as shown in Build Settings.
         loadingScreen.SetActive(true);
 
         AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(sceneToLoad, LoadSceneMode.Additive);

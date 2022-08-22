@@ -7,7 +7,6 @@ public class EventDoorDetector : MonoBehaviour
         if (other.tag == "Player" ||
             other.tag == "Cube")
         {
-            Debug.Log("player entered");
             EventArea.current.DoorwayTriggerEnter();
         }
     }
@@ -17,7 +16,6 @@ public class EventDoorDetector : MonoBehaviour
         if (other.tag == "Player" ||
             other.tag == "Cube")
         {
-            Debug.Log("player exited");
             EventArea.current.DoorwayTriggerExit();
         }
     }

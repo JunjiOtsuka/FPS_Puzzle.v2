@@ -1,11 +1,28 @@
-﻿public class PlayerData
-{
-    public string SavedScene;
-    public string SavedSubScene;
+﻿using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
 
-    public PlayerData(string SavedScene, string SavedSubScene)
+public class PlayerData
+{
+    public static PlayerData data;
+    public string SavedScene;
+    public float masterVolume;
+    public float musicVolume;
+    public float sfxVolume;
+
+    public PlayerData()
     {
-        this.SavedScene = SavedScene;
-        this.SavedSubScene = SavedSubScene;
     }
+
+    // public PlayerData(string currentScene)
+    // {
+    //     this.SavedScene = MySceneManager.currentScene;
+    // }
+
+    // public PlayerData(Dictionary<string, float> dict)
+    // {
+    //     this.masterVolume = dict["MasterVolume"];
+    //     this.musicVolume = dict["MusicVolume"];
+    //     this.sfxVolume = dict["SFXVolume"];
+    // }
 }

@@ -18,5 +18,5 @@
     MIDAIR, 
     zipline, 
     zipJump, 
-    grappling
+    GRAPPLING
 }

@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class GravityLiftHorizontal : MonoBehaviour
 {
@@ -9,30 +7,32 @@ public class GravityLiftHorizontal : MonoBehaviour
     void OnTriggerEnter(Collider other) {
         if (other.gameObject.CompareTag("Player"))
         {
-            Debug.Log("upon enter");
             var rb = other.gameObject.GetComponent<Rigidbody>();
             rb.useGravity = false;
+            rb.velocity = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
             rb.constraints = RigidbodyConstraints.FreezePositionY;
+            rb.constraints = RigidbodyConstraints.FreezeRotation;
         }
     }
 
     void OnTriggerStay(Collider other) {
         if (other.gameObject.CompareTag("Player"))
         {
-            Debug.Log("upon stay");
             var rb = other.gameObject.GetComponent<Rigidbody>();
-            rb.AddForce(transform.forward * liftForce, ForceMode.Acceleration);
             rb.useGravity = false;
+            rb.velocity = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
+            rb.AddForce(transform.forward * liftForce + transform.up * 50f, ForceMode.Acceleration);
             rb.constraints = RigidbodyConstraints.FreezePositionY;
+            rb.constraints = RigidbodyConstraints.FreezeRotation;
         }
     }
 
     void OnTriggerExit(Collider other) {
         if (other.gameObject.CompareTag("Player"))
         {
-            Debug.Log("upon exit");
             var rb = other.gameObject.GetComponent<Rigidbody>();
             rb.useGravity = true;
+            rb.velocity = new Vector3(rb.velocity.x, rb.velocity.y, rb.velocity.z);
             rb.constraints = RigidbodyConstraints.FreezeRotation;
         }
     }

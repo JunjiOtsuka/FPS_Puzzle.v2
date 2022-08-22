@@ -38,7 +38,7 @@ public class UIControlRebind : MonoBehaviour
 
         if(_InputActionReference != null)
         {
-            RebindManager.LoadBindingOverride(actionName);
+            RebindManager.LoadBindingOverride(_InputActionReference.action.name);
             GetBindingInfo();
             UpdateUI();
         }
@@ -65,8 +65,9 @@ public class UIControlRebind : MonoBehaviour
     private void GetBindingInfo()
     {
         if (_InputActionReference.action != null)
+        {
             actionName = _InputActionReference.action.name;
-
+        }
         if(_InputActionReference.action.bindings.Count > selectedBinding)
         {
             inputBinding = _InputActionReference.action.bindings[selectedBinding];

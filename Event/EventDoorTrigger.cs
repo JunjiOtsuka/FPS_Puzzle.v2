@@ -4,12 +4,13 @@ using UnityEngine;
 
 public class EventDoorTrigger : MonoBehaviour
 {
-    EventArea _EventArea;
+    public EventArea _EventArea;
+
     void Start()
     {
         EventArea.current.onDoorwayTriggerEnter += OnDoorwayOpen;
         EventArea.current.onDoorwayTriggerExit += OnDoorwayClose;
-        _EventArea = gameObject.transform.root.Find("Door(EnterEvent)").GetComponent<EventArea>();
+        // _EventArea = gameObject.transform.root.Find("Door(EnterEvent)").GetComponent<EventArea>();
     }
 
     private void OnDoorwayOpen()

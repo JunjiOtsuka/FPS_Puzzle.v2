@@ -3,26 +3,18 @@ using UnityEngine;
 
 public class Box : MonoBehaviour, IInteractable
 {
-    public bool IsInteracting = false;
+    public static bool IsInteracting = false;
     public bool JointConnected = false;
     GameObject interactZone;
+    GameObject dropZone;
 
-    public void Interact()
+    public void Update()
     {
-        interactZone = GameObject.Find("Interactable Zone");
-        if (GetComponent<FixedJoint>() == null)
-        {
-            interactZone.transform.DetachChildren();
-            gameObject.GetComponent<Rigidbody>().useGravity = true;
-            gameObject.GetComponent<Rigidbody>().interpolation = RigidbodyInterpolation.Interpolate;
-            IsInteracting = false;
-            JointConnected = false;
+        if (IsInteracting && WeaponStateManager.WeaponState != WeaponState.BAREHAND) {
+            ReleaseBox();
+            return;
         }
-        if (!IsInteracting && PlayerMovementV2.interactClick.WasPerformedThisFrame())
-        {
-            GrabBox();
-        } 
-        else if (IsInteracting && PlayerMovementV2.rightClick.WasPerformedThisFrame())
+        if (IsInteracting && PlayerMovementV2.rightClick.WasPerformedThisFrame())
         {
             ReleaseBox();
         }
@@ -32,58 +24,63 @@ public class Box : MonoBehaviour, IInteractable
         }
     }
 
+    public void Interact()
+    {
+        if (WeaponStateManager.WeaponState != WeaponState.BAREHAND) return;
+
+        interactZone = GameObject.Find("Interactable Zone");
+        if (GetComponent<FixedJoint>() == null)
+        {
+            DoStopInteracting();
+        }
+        if (!IsInteracting && PlayerMovementV2.interactClick.WasPerformedThisFrame())
+        {
+            GrabBox();
+        } 
+    }
+
 
 
     public void GrabBox()
     {
-        Debug.Log("Grabbing");
-        if (GetComponent<FixedJoint>() == null)
-        {
-            // GameObject player = GameObject.Find("PlayerNewInput");
-            // GameObject interactZone = GameObject.Find("Interactable Zone");
+        gameObject.GetComponent<Rigidbody>().isKinematic = true;
+        gameObject.GetComponent<BoxCollider>().isTrigger = true;
+        gameObject.GetComponent<Rigidbody>().useGravity = false;
+        gameObject.GetComponent<Rigidbody>().drag = 0;
+        gameObject.GetComponent<Rigidbody>().interpolation = RigidbodyInterpolation.None;
+        //make the object a child
+        transform.parent = interactZone.transform;
+        //take away the box collider so it wont interact with other objects.
+        
+        //in order to make it look like its holding an object make
+        //make the object position to this game objects position
+        transform.localPosition = Vector3.zero;
+        transform.localRotation = Quaternion.Euler(Vector3.zero);
+        transform.localScale = Vector3.one;
 
-            gameObject.AddComponent<FixedJoint>();
-            FixedJoint jointComponent = GetComponent<FixedJoint>();
-            jointComponent.connectedBody = interactZone.GetComponent<Rigidbody>();
-            jointComponent.breakForce = 1000;
-            jointComponent.breakTorque = 1000;
-            jointComponent.enableCollision = true;
-
-            //make the object a child
-            transform.parent = interactZone.transform;
-            //take away the box collider so it wont interact with other objects.
-            
-            //in order to make it look like its holding an object make
-            //make the object position to this game objects position
-            transform.position = interactZone.transform.position;
-
-            gameObject.GetComponent<Rigidbody>().useGravity = false;
-            gameObject.GetComponent<Rigidbody>().interpolation = RigidbodyInterpolation.None;
-            IsInteracting = true;
-            JointConnected = true;
-        }
+        IsInteracting = true;
     }
 
     public void ReleaseBox() 
     {
-        Debug.Log("Release");
-        Destroy (GetComponent<FixedJoint>());
-
-        interactZone.transform.DetachChildren();
-
-        gameObject.GetComponent<Rigidbody>().useGravity = true;
-        gameObject.GetComponent<Rigidbody>().interpolation = RigidbodyInterpolation.Interpolate;
-        IsInteracting = false;
-        JointConnected = false;
+        dropZone = GameObject.Find("DropZone");
+        DoStopInteracting();
+        transform.localPosition = dropZone.transform.position;
     }
 
     public void ThrowBox()
     {
-        Debug.Log("Throwing");
-        Destroy (GetComponent<FixedJoint>());
-
+        DoStopInteracting();
         GetComponent<Rigidbody>().AddForce(interactZone.transform.forward * 100, ForceMode.VelocityChange);
+    }
+
+    public void DoStopInteracting()
+    {
         interactZone.transform.DetachChildren();
+
+        gameObject.GetComponent<Rigidbody>().isKinematic = false;
+        gameObject.GetComponent<BoxCollider>().isTrigger = false;
+        gameObject.GetComponent<Rigidbody>().drag = 1;
 
         gameObject.GetComponent<Rigidbody>().useGravity = true;
         gameObject.GetComponent<Rigidbody>().interpolation = RigidbodyInterpolation.Interpolate;

@@ -15,6 +15,7 @@ public class RebindManager : MonoBehaviour
     {
         if (InputManager.inputActions == null)
         {
+            Debug.Log("check awake");
             InputManager.inputActions = new PlayerInputAction();
         }
     }
@@ -85,7 +86,10 @@ public class RebindManager : MonoBehaviour
     public static string GetBindingName(string actionName, int bindingIndex)
     {
         if (InputManager.inputActions == null)
+        {
+            Debug.Log("check getbindingname");
             InputManager.inputActions = new PlayerInputAction();
+        }
 
         InputAction action = InputManager.inputActions.asset.FindAction(actionName);
         return action.GetBindingDisplayString(bindingIndex);
@@ -93,6 +97,7 @@ public class RebindManager : MonoBehaviour
 
     private static void SaveBindingOverride(InputAction action)
     {
+        Debug.Log("Saving " + action);
         for (int i = 0; i < action.bindings.Count; i++)
         {
             PlayerPrefs.SetString(action.actionMap + action.name + i, action.bindings[i].overridePath);
@@ -101,8 +106,13 @@ public class RebindManager : MonoBehaviour
 
     public static void LoadBindingOverride(string actionName)
     {
+        Debug.Log("Loading");
+        UICanvasManager.loadedKeybinds++;
         if (InputManager.inputActions == null)
+        {
+            Debug.Log("check loadbinding");
             InputManager.inputActions = new PlayerInputAction();
+        }
 
         InputAction action = InputManager.inputActions.asset.FindAction(actionName);
 

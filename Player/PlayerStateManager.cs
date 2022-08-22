@@ -24,10 +24,11 @@ public class PlayerStateManager : MonoBehaviour
     public bool AboveWRThreshold;
     public bool ByWall;
     public bool CanWallRun;
-    public bool CanWallJump;
+    public static bool CanWallJump;
     public bool CanWallClimb;
+    public static bool IsWallRunning = false;
 
-    bool wallRunning;
+    public static bool wallRunning;
     bool wallStick;
     bool isInteracting;
     bool zipJump;
@@ -51,23 +52,23 @@ public class PlayerStateManager : MonoBehaviour
         }
 
         //Wall Detector
-        if (!WD.rightWall && !WD.leftWall && !WD.backWall && !WD.frontWall) 
+        if (!WallDetection.rightWall && !WallDetection.leftWall && !WallDetection.backWall && !WallDetection.frontWall) 
         {
             wallState = WallState.NOWALL;
         }
-        if (WD.rightWall) 
+        if (WallDetection.rightWall) 
         {
             wallState = WallState.RIGHTWALL;
         }
-        if (WD.leftWall) 
+        if (WallDetection.leftWall) 
         {
             wallState = WallState.LEFTWALL;
         }
-        if (WD.frontWall) 
+        if (WallDetection.frontWall) 
         {
             wallState = WallState.FRONTWALL;
         }
-        if (WD.backWall) 
+        if (WallDetection.backWall) 
         {
             wallState = WallState.BACKWALL;
         }
@@ -135,6 +136,10 @@ public class PlayerStateManager : MonoBehaviour
                 UpdatePlayerState(PlayerState.WALLRUNNING);
             }
         }
+
+        if (GrapplingHook.GrapplingState == GrapplingState.GRAPPLING) {
+            UpdatePlayerState(PlayerState.GRAPPLING);
+        } 
 
         // if (!GD.isGrounded) {
             // if (!wallStick && !wallRunning && !WD.rightWall && !WD.leftWall && !WD.frontWall && !WD.backWall && !isInteracting || state == PlayerState.JUMP) {
@@ -257,6 +262,8 @@ public class PlayerStateManager : MonoBehaviour
             case PlayerState.WALLJUMP:
             {
                 // DoWallJump();
+                UpdatePlayerState(PlayerState.WALLJUMP);
+                UpdateJumpState(JumpState.WALLJUMP);
                 break;
             }
             case PlayerState.wallStick:
@@ -279,7 +286,7 @@ public class PlayerStateManager : MonoBehaviour
                 // executeZipJump();
                 break;
             }
-            case PlayerState.grappling:
+            case PlayerState.GRAPPLING:
             {
                 // executeGrapple();
                 break;
@@ -352,11 +359,11 @@ public class PlayerStateManager : MonoBehaviour
 
     
 
-    private void UpdatePlayerState(PlayerState newState) {
+    public void UpdatePlayerState(PlayerState newState) {
         PlayerStateManager.state = newState;
     }
 
-    private void UpdateJumpState(JumpState newJumpState) {
+    public void UpdateJumpState(JumpState newJumpState) {
         PlayerStateManager.JumpState = newJumpState;
     }
 

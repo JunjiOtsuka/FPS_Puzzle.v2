@@ -13,6 +13,7 @@ public class TeleporterV2 : MonoBehaviour
 	    	// other.transform.position = teleportDestination;
 	    	// other.gameObject.GetComponent<CharacterController>().enabled = false;
 			other.gameObject.transform.position = destination.position;
+			other.gameObject.transform.rotation = destination.rotation;
 			// other.gameObject.GetComponent<CharacterController>().enabled = true;
     	}
     }
