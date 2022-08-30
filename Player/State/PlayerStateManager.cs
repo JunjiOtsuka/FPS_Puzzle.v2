@@ -4,28 +4,20 @@ using UnityEngine;
 
 public class PlayerStateManager : MonoBehaviour
 {
-    public PlayerMovementV2 playerMovement;
-    public Rigidbody _rb;
-
+    // public PlayerStateMachine _PlayerStateMachine;
     public Camera MC;
-    public GroundDetector GD;
-    public WallDetection WD;
-    public InteractDetector ID;
-    public GrappleDetector GrD;
 
     //All States
     public static PlayerState state = PlayerState.IDLE;
     public static JumpState JumpState;
-    public static WallState wallState;
     public static WallRunState WRState;
-    public static GroundState groundState;
 
     //Wallrun Conditions
-    public bool AboveWRThreshold;
-    public bool ByWall;
-    public bool CanWallRun;
+    public static bool AboveWRThreshold;
+    public static bool ByWall;
+    public static bool CanWallRun;
     public static bool CanWallJump;
-    public bool CanWallClimb;
+    public static bool CanWallClimb;
     public static bool IsWallRunning = false;
 
     public static bool wallRunning;
@@ -33,50 +25,18 @@ public class PlayerStateManager : MonoBehaviour
     bool isInteracting;
     bool zipJump;
 
-    void Awake() 
-    {
-        _rb = GetComponent<Rigidbody>();
-    }
-
     // Update is called once per frame
     void Update()
     {
-        //Ground Detector
-        if (GD.isGrounded) 
-        {
-            groundState = GroundState.ONGROUND;
-        } 
-        else if (!GD.isGrounded) 
-        {
-            groundState = GroundState.INAIR;
-        }
-
-        //Wall Detector
-        if (!WallDetection.rightWall && !WallDetection.leftWall && !WallDetection.backWall && !WallDetection.frontWall) 
-        {
-            wallState = WallState.NOWALL;
-        }
-        if (WallDetection.rightWall) 
-        {
-            wallState = WallState.RIGHTWALL;
-        }
-        if (WallDetection.leftWall) 
-        {
-            wallState = WallState.LEFTWALL;
-        }
-        if (WallDetection.frontWall) 
-        {
-            wallState = WallState.FRONTWALL;
-        }
-        if (WallDetection.backWall) 
-        {
-            wallState = WallState.BACKWALL;
-        }
-
         float horizontalInput = PlayerMovementV2.movement.ReadValue<Vector2>().x;
         float verticalInput = PlayerMovementV2.movement.ReadValue<Vector2>().y;
 
-        if (GD.isGrounded) {
+        // float horizontalInput = _PlayerStateMachine.movement.ReadValue<Vector2>().x;
+        // float verticalInput = _PlayerStateMachine.movement.ReadValue<Vector2>().y;
+
+        if (GroundDetector.state == GroundState.ONGROUND) {
+            UpdateJumpState(JumpState.NOT_JUMPING);
+
             if (horizontalInput == 0 || verticalInput == 0) 
             {
                 UpdatePlayerState(PlayerState.IDLE);
@@ -111,8 +71,8 @@ public class PlayerStateManager : MonoBehaviour
         {
             WRState = WallRunState.ABLE;
             CanWallRun = true;
-        }
-        if (!ByWall || !AboveWRThreshold) 
+        } 
+        else if (!ByWall || !AboveWRThreshold || (!ByWall && !AboveWRThreshold))
         {
             WRState = WallRunState.UNABLE;
             CanWallRun = false;
@@ -141,103 +101,10 @@ public class PlayerStateManager : MonoBehaviour
             UpdatePlayerState(PlayerState.GRAPPLING);
         } 
 
-        // if (!GD.isGrounded) {
-            // if (!wallStick && !wallRunning && !WD.rightWall && !WD.leftWall && !WD.frontWall && !WD.backWall && !isInteracting || state == PlayerState.JUMP) {
-            //     UpdatePlayerState(PlayerState.MIDAIR);
-            // }
-
-            // if (PlayerMovementV2.jumpAction.WasPerformedThisFrame()) {
-            //     if(PlayerStateManager.WRState == WallRunState.ABLE) { 
-            //         UpdatePlayerState(PlayerState.WALLRUNNING);
-            //     }
-
-                // if (WD.frontWall) {
-                //     UpdatePlayerState(PlayerState.wallStick);
-                // }
-
-                // if (wallRunning) {
-                //     UpdatePlayerState(PlayerState.wallJump);
-            //     } 
-            // }
-        // }
-
-        // if (state == PlayerState.zipline && Input.GetButtonDown("Jump")) {
-        //     state = PlayerState.zipJump;
-        // }
-
-        // if (wallStick) {
-        //     if (verticalInput != 0) {
-        //         state = PlayerState.wallClimb;
-        //     }
-        //     if (verticalInput == 0 || !WD.frontWall) {
-        //         state = PlayerState.wallStick;
-        //     }
-        //     if (WD.rightWall || WD.leftWall || WD.backWall) {
-        //         if (Input.GetButtonDown("Jump")) {
-        //             state = PlayerState.wallJump;
-        //         }
-        //     }
-        //     if (!WD.rightWall && !WD.leftWall && !WD.backWall && !WD.frontWall) {
-        //         state = PlayerState.MIDAIR;
-        //     }
-        //     if (GD.isGrounded){
-        //         state = PlayerState.IDLE;
-        //     }
-        // } 
-
-        switch (groundState) 
-        {
-            case GroundState.ONGROUND:
-            {
-                AboveWRThreshold = false;
-                break;
-            }
-            case GroundState.INAIR:
-            {
-                AboveWRThreshold = true;
-                break;
-            }
-        }
-
-        switch (wallState) 
-        {
-            case WallState.NOWALL:
-            {
-                ByWall = false;
-                CanWallClimb = false;
-                break;
-            }
-            case WallState.RIGHTWALL:
-            {
-                ByWall = true;
-                CanWallClimb = false;
-                break;
-            }
-            case WallState.LEFTWALL:
-            {
-                ByWall = true;
-                CanWallClimb = false;
-                break;
-            }
-            case WallState.FRONTWALL:
-            {
-                ByWall = false;
-                CanWallClimb = true;
-                break;
-            }
-            case WallState.BACKWALL:
-            {
-                ByWall = false;
-                CanWallClimb = false;
-                break;
-            }
-        }
-
         switch (state) {
             case PlayerState.IDLE:
             {
                 DoIdle();
-                // executeWallStick(horizontalInput, verticalInput);
                 break;
             }
             case PlayerState.WALLSTICK:
@@ -261,9 +128,11 @@ public class PlayerStateManager : MonoBehaviour
             }
             case PlayerState.WALLJUMP:
             {
-                // DoWallJump();
-                UpdatePlayerState(PlayerState.WALLJUMP);
-                UpdateJumpState(JumpState.WALLJUMP);
+                if (GroundDetector.state == GroundState.ONGROUND) 
+                {
+                    UpdatePlayerState(PlayerState.IDLE);
+                    UpdateJumpState(JumpState.NOT_JUMPING);
+                }
                 break;
             }
             case PlayerState.wallStick:
@@ -327,43 +196,11 @@ public class PlayerStateManager : MonoBehaviour
         // controller.Move(velocity * Time.deltaTime);
     }
 
-    // void executeWallStick(float horizontalInput, float verticalInput) {
-    //     wallStick = true;
-
-    //     move = transform.right * horizontalInput;
-
-    //     move.Normalize();
-
-    //     controller.Move(move * (speed / 5) * Time.deltaTime);
-
-    //     velocity.y = 0;
-
-    //     controller.Move(velocity * Time.deltaTime);
-    // }
-
-    // void executeWallClimb(float horizontalInput, float verticalInput) {
-    //     move = transform.right * horizontalInput;
-
-    //     move.Normalize();
-
-    //     controller.Move(move * (speed / 5) * Time.deltaTime);
-
-    //     if (verticalInput > 0) {
-    //         velocity.y = 7f;
-    //     } else if (verticalInput < 0) {
-    //         velocity.y += gravity * 3f * Time.deltaTime;
-    //     }
-
-    //     controller.Move(velocity * Time.deltaTime);
-    // }
-
-    
-
-    public void UpdatePlayerState(PlayerState newState) {
+    public static void UpdatePlayerState(PlayerState newState) {
         PlayerStateManager.state = newState;
     }
 
-    public void UpdateJumpState(JumpState newJumpState) {
+    public static void UpdateJumpState(JumpState newJumpState) {
         PlayerStateManager.JumpState = newJumpState;
     }
 
@@ -376,7 +213,7 @@ public class PlayerStateManager : MonoBehaviour
     }
 
     public static bool checkWallState(WallState newJumpState) {
-        return PlayerStateManager.wallState == newJumpState;
+        return WallDetection.state == newJumpState;
     }
 
     public static bool checkWallRunState(WallRunState newJumpState) {
@@ -384,7 +221,7 @@ public class PlayerStateManager : MonoBehaviour
     }
 
     public static bool checkGroundState(GroundState newJumpState) {
-        return PlayerStateManager.groundState == newJumpState;
+        return GroundDetector.state == newJumpState;
     }
 
 }

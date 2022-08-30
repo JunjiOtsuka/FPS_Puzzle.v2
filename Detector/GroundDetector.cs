@@ -9,7 +9,8 @@ public class GroundDetector : MonoBehaviour
     public float rayDistance;
     public float distanceFromPlayer;
 
-    public bool isGrounded;
+    public static bool isGrounded;
+    public static GroundState state;
     
     void Update()
     {
@@ -21,19 +22,35 @@ public class GroundDetector : MonoBehaviour
         RaycastHit hit;
 
         if (Physics.Raycast (rayBottom, out hit, rayDistance, mask) 
-        && Physics.Raycast (rayBottom2, out hit, rayDistance, mask) 
-        && Physics.Raycast (rayBottom3, out hit, rayDistance, mask)
-        && Physics.Raycast (rayBottom4, out hit, rayDistance, mask)) {
+        || Physics.Raycast (rayBottom2, out hit, rayDistance, mask) 
+        || Physics.Raycast (rayBottom3, out hit, rayDistance, mask)
+        || Physics.Raycast (rayBottom4, out hit, rayDistance, mask)
+        ) {
             //reset acceleration to 0
             isGrounded = true;
+            state = GroundState.ONGROUND;
             Debug.DrawLine(rayBottom.origin, hit.point, Color.red);
         } else {
             isGrounded = false;
-
+            state = GroundState.INAIR;
             Debug.DrawLine(rayBottom.origin, rayBottom.origin + rayBottom.direction * rayDistance, Color.green);
-            Debug.DrawLine(rayBottom2.origin, rayBottom2.origin + rayBottom2.direction * rayDistance, Color.green);
-            Debug.DrawLine(rayBottom3.origin, rayBottom3.origin + rayBottom3.direction * rayDistance, Color.green);
-            Debug.DrawLine(rayBottom4.origin, rayBottom4.origin + rayBottom4.direction * rayDistance, Color.green);
+            // Debug.DrawLine(rayBottom2.origin, rayBottom2.origin + rayBottom2.direction * rayDistance, Color.green);
+            // Debug.DrawLine(rayBottom3.origin, rayBottom3.origin + rayBottom3.direction * rayDistance, Color.green);
+            // Debug.DrawLine(rayBottom4.origin, rayBottom4.origin + rayBottom4.direction * rayDistance, Color.green);
+        }
+
+        switch (GroundDetector.state) 
+        {
+            case GroundState.ONGROUND:
+            {
+                PlayerStateManager.AboveWRThreshold = false;
+                break;
+            }
+            case GroundState.INAIR:
+            {
+                PlayerStateManager.AboveWRThreshold = true;
+                break;
+            }
         }
     }
 }

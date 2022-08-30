@@ -23,14 +23,18 @@ public class PlayerInteract : MonoBehaviour
 
             if (Physics.Raycast (rayInteract, out hit, rayDistance, mask)) 
             {
-                IsInteracting = true;
                 IInteractable action = hit.collider.GetComponent<IInteractable>();
-                if(hit.collider.tag == "Cube" || hit.collider.tag == "Interactable")
+                if (hit.collider.tag == "Cube" || hit.collider.tag == "Interactable")
                 {
+                    IsInteracting = true;
                     if (action == null) return;
                         action.Interact();
+                    Debug.DrawLine(rayInteract.origin, hit.point, Color.red);
+                } 
+                else if (hit.transform.gameObject.layer != LayerMask.NameToLayer("Cube") || hit.transform.gameObject.layer != LayerMask.NameToLayer("Interactable")) 
+                {
+                    IsInteracting = false;
                 }
-                Debug.DrawLine(rayInteract.origin, hit.point, Color.red);
             } else {
                 IsInteracting = false;
                 Debug.DrawLine(rayInteract.origin, rayInteract.origin + rayInteract.direction * rayDistance, Color.green);

@@ -9,6 +9,6 @@ public class UI_ShowCurrentState : MonoBehaviour
 
     void Update()
     {
-        GOText.text = $"PlayerState:{PlayerStateManager.state} \nWallState:{PlayerStateManager.wallState} \nWallRunState:{PlayerStateManager.WRState} \nGroundState:{PlayerStateManager.groundState} \nJumpState:{PlayerStateManager.JumpState}";
+        GOText.text = $"PlayerState:{PlayerStateManager.state} \nWallState:{WallDetection.state} \nWallRunState:{PlayerStateManager.WRState} \nGroundState:{GroundDetector.state} \nJumpState:{PlayerStateManager.JumpState}";
     }
 }

@@ -12,6 +12,7 @@ public class GravityLiftHorizontal : MonoBehaviour
             rb.velocity = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
             rb.constraints = RigidbodyConstraints.FreezePositionY;
             rb.constraints = RigidbodyConstraints.FreezeRotation;
+            LiftStateManager.liftState = LiftStateManager.LiftState.ONLIFT;
         }
     }
 
@@ -24,6 +25,7 @@ public class GravityLiftHorizontal : MonoBehaviour
             rb.AddForce(transform.forward * liftForce + transform.up * 50f, ForceMode.Acceleration);
             rb.constraints = RigidbodyConstraints.FreezePositionY;
             rb.constraints = RigidbodyConstraints.FreezeRotation;
+            LiftStateManager.liftState = LiftStateManager.LiftState.ONLIFT;
         }
     }
 
@@ -34,6 +36,7 @@ public class GravityLiftHorizontal : MonoBehaviour
             rb.useGravity = true;
             rb.velocity = new Vector3(rb.velocity.x, rb.velocity.y, rb.velocity.z);
             rb.constraints = RigidbodyConstraints.FreezeRotation;
+            LiftStateManager.liftState = LiftStateManager.LiftState.NONE;
         }
     }
 }

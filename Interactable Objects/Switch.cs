@@ -14,25 +14,14 @@ public class Switch : MonoBehaviour, IInteractable
     public GameObject SwitchWiredTo;
     public Transform origin;
     public Transform target;
+    public List<FloorRotate> targets;
+    public int TargetListSize;
     public float DoorTimer = 3f;
     public static bool FloorSwitchOn = false;
-    public FloorRotate _FloorRotate;
 
     public void Interact()
     {
-        // if (!SwitchOn && PlayerMovementV2.interactClick.WasPerformedThisFrame())
-        // {
-        //     if (_SwitchType == SwitchType.DOOR) OnSwitchOn();
-        //     if (_SwitchType == SwitchType.FLOOR) OnFloorSwitchOn();
-        // } 
-        // if (SwitchOn) {
-        //     if (_SwitchType == SwitchType.DOOR) StartCoroutine(OnSwitchOff());
-        //     if(PlayerMovementV2.interactClick.WasPerformedThisFrame())
-        //     {
-        //         if (_SwitchType == SwitchType.FLOOR) OnFloorSwitchOff();
-        //     }
-        // }
-
+        if (targets == null) return;
         if (_SwitchType == SwitchType.DOOR)
         {
             if (!SwitchOn && PlayerMovementV2.interactClick.WasPerformedThisFrame())
@@ -45,14 +34,22 @@ public class Switch : MonoBehaviour, IInteractable
         }
         if (_SwitchType == SwitchType.FLOOR) 
         {
-            if (!SwitchOn && PlayerMovementV2.interactClick.WasPerformedThisFrame()) 
+            if (!FloorSwitchOn && PlayerMovementV2.interactClick.WasPerformedThisFrame())
             {
-                FloorSwitchOn = true;
+                Debug.Log("on");
+                foreach (FloorRotate target in targets)
+                {
+                    target.FloorSwitchOn = true;
+                }
             } 
-            // else if (SwitchOn && PlayerMovementV2.interactClick.WasPerformedThisFrame())
-            // {
-            //     FloorRotate.OnFloorSwitchOff();
-            // } 
+            if (FloorSwitchOn && targets.Count == FloorRotate.getAllTargets)
+            {
+                Debug.Log("off");
+                foreach (FloorRotate target in targets)
+                {
+                    target.FloorSwitchOn = false;
+                }
+            }
         }
     }
 

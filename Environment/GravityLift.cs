@@ -11,6 +11,7 @@ public class GravityLift : MonoBehaviour
         {
             var rb = other.gameObject.GetComponent<Rigidbody>();
             rb.useGravity = false;
+            LiftStateManager.liftState = LiftStateManager.LiftState.ONLIFT;
         }
     }
 
@@ -19,6 +20,7 @@ public class GravityLift : MonoBehaviour
         {
             var rb = other.gameObject.GetComponent<Rigidbody>();
             rb.AddForce(transform.forward * liftForce, ForceMode.Acceleration);
+            LiftStateManager.liftState = LiftStateManager.LiftState.ONLIFT;
         }
     }
     void OnTriggerExit(Collider other) {
@@ -26,6 +28,7 @@ public class GravityLift : MonoBehaviour
         {
             var rb = other.gameObject.GetComponent<Rigidbody>();
             rb.useGravity = true;
+            LiftStateManager.liftState = LiftStateManager.LiftState.NONE;
         }
     }
 }

@@ -19,6 +19,8 @@ public class WallDetection : MonoBehaviour
     public static RaycastHit frontWallhit;
     public static RaycastHit backWallhit;
 
+    public static WallState state;
+
     // Update is called once per frame
     void Update()
     {
@@ -40,6 +42,7 @@ public class WallDetection : MonoBehaviour
             // create wall layer so the player can run on wall 
             // Within this condition give the player wall run
             leftWall = true;
+            state = WallState.LEFTWALL;
             Debug.DrawLine(rayLeft.origin, leftWallhit.point, Color.red);
         } else {
             leftWall = false;
@@ -52,6 +55,7 @@ public class WallDetection : MonoBehaviour
          && Physics.Raycast (rayRight2, out hit2, sideWallRayDistance, mask) 
          && Physics.Raycast (rayRight3, out hit3, sideWallRayDistance, mask)) {
             rightWall = true;
+            state = WallState.RIGHTWALL;
             Debug.DrawLine(rayRight.origin, rightWallhit.point, Color.red);
         } else {
             rightWall = false;
@@ -62,6 +66,7 @@ public class WallDetection : MonoBehaviour
 
         if (Physics.Raycast (rayFront, out frontWallhit, frontBackWallRayDistance, mask)) {
             frontWall = true;
+            state = WallState.FRONTWALL;
             Debug.DrawLine(rayFront.origin, frontWallhit.point, Color.red);
         } else {
             frontWall = false;
@@ -70,10 +75,50 @@ public class WallDetection : MonoBehaviour
 
         if (Physics.Raycast (rayBehind, out backWallhit, frontBackWallRayDistance, mask)) {
             backWall = true;
+            state = WallState.BACKWALL;
             Debug.DrawLine(rayBehind.origin, backWallhit.point, Color.red);
         } else {
             backWall = false;
             Debug.DrawLine(rayBehind.origin, rayBehind.origin + rayBehind.direction * frontBackWallRayDistance, Color.green);
+        }
+
+        if (!rightWall && !leftWall && !backWall && !frontWall) 
+        {
+            state = WallState.NOWALL;
+        }
+
+        switch (WallDetection.state) 
+        {
+            case WallState.NOWALL:
+            {
+                PlayerStateManager.ByWall = false;
+                PlayerStateManager.CanWallClimb = false;
+                break;
+            }
+            case WallState.RIGHTWALL:
+            {
+                PlayerStateManager.ByWall = true;
+                PlayerStateManager.CanWallClimb = false;
+                break;
+            }
+            case WallState.LEFTWALL:
+            {
+                PlayerStateManager.ByWall = true;
+                PlayerStateManager.CanWallClimb = false;
+                break;
+            }
+            case WallState.FRONTWALL:
+            {
+                PlayerStateManager.ByWall = false;
+                PlayerStateManager.CanWallClimb = true;
+                break;
+            }
+            case WallState.BACKWALL:
+            {
+                PlayerStateManager.ByWall = false;
+                PlayerStateManager.CanWallClimb = false;
+                break;
+            }
         }
     }
 }
