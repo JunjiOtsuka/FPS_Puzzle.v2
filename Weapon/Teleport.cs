@@ -40,8 +40,6 @@ public class Teleport : MonoBehaviour
 
         CalculateAngleFromGround();
 
-        CalculateRotation();
-
         GroundCollision = TeleportDetection(whatIsGround, GroundCollision);
 
         // Cast a sphere wrapping character controller 10 meters forward
@@ -106,66 +104,6 @@ public class Teleport : MonoBehaviour
         //compare angle to the wall
         AngleFromWall = Vector2.Angle(targetDir2D, new Vector2(hit.normal.x, hit.normal.z));
 
-    }
-
-    void CalculateRotation()
-    {
-        //update player world rotation
-        //World rotation
-        WorldRotationDegrees = (transform.root.eulerAngles.y) * Mathf.Deg2Rad;
-        //update xz relative to four quadrants
-        var x = Mathf.Sin(WorldRotationDegrees);
-        var z = Mathf.Cos(WorldRotationDegrees);
-        //when x is 0
-        if (x == 0)
-        {
-            //check world rotation between angles
-            if (WorldRotationDegrees >= 0 && WorldRotationDegrees < 180)
-            {
-                //x quadrant I and IV
-                x = 1;
-            }
-            if (WorldRotationDegrees >= 180 && WorldRotationDegrees < 360)
-            {
-                //x quadrant II and III
-                x = -1;
-            }
-        }
-        //same thing for z
-        if (z == 0)
-        {
-            if (WorldRotationDegrees >= 270 && WorldRotationDegrees < 90)
-            {
-                //z quadrant I and II
-                z = 1;
-            }
-            if (WorldRotationDegrees >= 90 && WorldRotationDegrees < 270)
-            {
-                //z quadrant III and IV
-                z = -1;
-            }
-        }
-
-        //Angle between player to wall
-        AngleFromWall = Mathf.Floor(AngleFromWall);
-        if (AngleFromWall != 0 && AngleFromWall < 90) 
-        {
-            AngleFromWall += 90;
-        }
-        // Debug.Log(AngleFromWall);
-        AngleFromWall = (AngleFromWall) * Mathf.Deg2Rad;
-        _A11 = Mathf.Cos(AngleFromWall); _A12 = -Mathf.Sin(AngleFromWall);
-        _A21 = Mathf.Sin(AngleFromWall); _A22 = Mathf.Cos(AngleFromWall);
-
-        var _Ax = (_A11 + _A12);
-        var _Ay = (_A21 + _A22);
-        //update teleport location
-        teleportTo = new Vector3((float)_Ax * x, 1.5f, (float)_Ay * z);
-
-        // var _Ax = Math.Round(_A11 + _A12);
-        // var _Ay = Math.Round(_A21 + _A22);
-        // teleportTo = new Vector3((float)_Ax * x, 1.5f, (float)_Ay * z);
-        Debug.Log(hit.normal);
     }
 
     void OnDrawGizmosSelected()
