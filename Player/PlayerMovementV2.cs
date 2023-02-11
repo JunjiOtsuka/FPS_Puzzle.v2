@@ -16,6 +16,7 @@ public class PlayerMovementV2 : MonoBehaviour
     public static InputAction options;
     public static InputAction Weapon1;
     public static InputAction Weapon2;
+    public static InputAction Tactical1;
     public static PlayerInput _PlayerInput;
     public PlayerStateManager playerStateManager;
     public GameObject UI_Master;
@@ -95,6 +96,7 @@ public class PlayerMovementV2 : MonoBehaviour
         options = InputManager.inputActions.Player.Options;
         Weapon1 = InputManager.inputActions.Player.Weapon1;
         Weapon2 = InputManager.inputActions.Player.Weapon2;
+        Tactical1 = InputManager.inputActions.Player.Tactical1;
         InputManager.inputActions.Player.MouseX.performed += ctx => mouseInput.x = ctx.ReadValue<float>();
         InputManager.inputActions.Player.MouseY.performed += ctx => mouseInput.y = ctx.ReadValue<float>();
         InputManager.inputActions.Player.Run.performed += DoRun;

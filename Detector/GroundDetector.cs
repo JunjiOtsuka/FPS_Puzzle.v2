@@ -9,6 +9,7 @@ public class GroundDetector : MonoBehaviour
     public float rayDistance;
     public float distanceFromPlayer;
 
+    public static RaycastHit hit;
     public static bool isGrounded;
     public static GroundState state;
     
@@ -18,8 +19,6 @@ public class GroundDetector : MonoBehaviour
         Ray rayBottom2 = new Ray (transform.position + new Vector3 (distanceFromPlayer, 0, -distanceFromPlayer), -transform.up);
         Ray rayBottom3 = new Ray (transform.position + new Vector3 (0, 0, distanceFromPlayer),  -transform.up);
         Ray rayBottom4 = new Ray (transform.position + new Vector3 (-distanceFromPlayer, 0, -distanceFromPlayer),  -transform.up);
-
-        RaycastHit hit;
 
         if (Physics.Raycast (rayBottom, out hit, rayDistance, mask) 
         || Physics.Raycast (rayBottom2, out hit, rayDistance, mask) 
