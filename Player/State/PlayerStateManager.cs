@@ -112,7 +112,7 @@ public class PlayerStateManager : MonoBehaviour
                 // executeWallStick(horizontalInput, verticalInput);
                 break;
             }
-            case PlayerState.WALLCLIMBING:
+            case PlayerState.WALLCLIMB:
             {
                 // executeWallClimb(horizontalInput, verticalInput);
                 break;

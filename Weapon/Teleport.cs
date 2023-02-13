@@ -5,7 +5,10 @@ using UnityEngine;
 
 public class Teleport : MonoBehaviour
 {
+    //teleport destination indicator
     public GameObject teleportPrefab;
+
+    //sphere cast
     public LayerMask whatIsGround;
     public bool GroundCollision;
     public float sphereRadius;
@@ -15,15 +18,11 @@ public class Teleport : MonoBehaviour
     public float maxDistance = 30f;
     RaycastHit hit;
 
-    [Header("Circle")]
-    float _A11; float _A12;
-    float _A21; float _A22;
-    Vector3 teleportTo;
+    //character height
     Vector3 m_CharacterHeight;
-    float WorldRotationDegrees;
+
+    //Angle between player and wall/ground
     float AngleFromGround;
-    float AngleFromWall;
-    public float radius = 2f;
 
     // Start is called before the first frame update
     void Start()
@@ -45,14 +44,14 @@ public class Teleport : MonoBehaviour
         // Cast a sphere wrapping character controller 10 meters forward
         // to see if it is about to hit anything.
         if (GroundCollision) {
-            //if player looking above horizon
+            //check whether the player is looking parallel to the ground or looking down
             if (AngleFromGround <= 90) {
                 if (PlayerMovementV2.Tactical1.WasPerformedThisFrame())
                 {
                     transform.root.position = hit.point + m_CharacterHeight;
                 }
             } else {
-                //if angle is greater than 90 degrees and target location is not a slope
+                //if player is looking up
                 if (PlayerMovementV2.Tactical1.WasPerformedThisFrame())
                 {
                     //teleport the player to the ledge
@@ -63,17 +62,21 @@ public class Teleport : MonoBehaviour
         }
     }
 
+    //bool for teleport destination 
     bool TeleportDetection(LayerMask layer, bool bCheck)
     {
         if (Physics.SphereCast(origin, 1f, transform.forward, out hit, maxDistance, layer))
         {
             distanceToObstacle = hit.distance;
             teleportPrefab.transform.position = hit.point + m_CharacterHeight;
+
+            //check if sphere cast is hitting ground layer
             if (hit.transform.gameObject.layer == LayerMask.NameToLayer("Ground"))
             {
                 bCheck = true;
                 teleportPrefab.SetActive(true);
             }
+            //check if sphere cast is hitting wall layer
             if (hit.transform.gameObject.layer == LayerMask.NameToLayer("Wall"))
             {
                 bCheck = false;
@@ -101,9 +104,6 @@ public class Teleport : MonoBehaviour
         //Get the angle from wall
         //get target xz vector
         Vector2 targetDir2D = new Vector2(transform.root.position.x, transform.root.position.z) - new Vector2(hit.point.x, hit.point.z);
-        //compare angle to the wall
-        AngleFromWall = Vector2.Angle(targetDir2D, new Vector2(hit.normal.x, hit.normal.z));
-
     }
 
     void OnDrawGizmosSelected()

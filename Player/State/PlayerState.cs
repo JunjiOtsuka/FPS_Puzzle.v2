@@ -1,7 +1,7 @@
 ﻿public enum PlayerState
 {
     WALLRUNNING,
-    WALLCLIMBING,
+    WALLCLIMB,
     WALLSTICK,
     WALLJUMP,
     IDLE,

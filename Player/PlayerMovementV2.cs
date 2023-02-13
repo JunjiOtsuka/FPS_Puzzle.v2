@@ -23,6 +23,9 @@ public class PlayerMovementV2 : MonoBehaviour
 
     public Rigidbody _rb;
 
+    [Header("CooldownTimer")]
+    public CooldownManager m_CD;
+
     [Header("Walking")]
 	float runSpeed; 
 	public float walkSpeed = 10;
@@ -37,6 +40,16 @@ public class PlayerMovementV2 : MonoBehaviour
     [Header("Jumping")]
     public float jumpSpeed = 100f;
 
+
+    [Header("WallAction")]
+    public PhysicMaterial slippery;
+    public PhysicMaterial maxFriction;
+	public float WallSideWalkSpeed = 200f;
+    public bool bWallStick;
+    public bool bWallBounce;
+    public bool bWallMoveInput;
+    public float wallClimbSpeed = 10000f;
+    public Vector3 SavedVelocity;
     [Header("WallRunSpeed")]
     public float wallRunForce;
     [Header("WallJump")]
@@ -108,11 +121,13 @@ public class PlayerMovementV2 : MonoBehaviour
         mainCam = GetComponentInChildren<Camera>();
     	Cursor.lockState = CursorLockMode.Locked;
         initialSpeed = walkSpeed;
-        crouchSpeed = initialSpeed / 2;
-        runSpeed = initialSpeed * 2;
+        crouchSpeed = initialSpeed / 1.1f;
+        runSpeed = initialSpeed * 1.1f;
         PlayerActionMapManager.ToggleActionMap(InputManager.inputActions.Player, "Player");
         // InputManager.ToggleActionMap(InputManager.inputActions.Player);
         DisableCursor();
+
+        m_CD = new CooldownManager();
         // if (WeaponStateManager.WeaponState == WeaponState.BAREHAND) EnableBareHand();
         // if (WeaponStateManager.WeaponState == WeaponState.GRAPPLINGHOOK) EnableGrapple();
     }
@@ -146,17 +161,26 @@ public class PlayerMovementV2 : MonoBehaviour
                 DoStopCrouch();
             }
         }
+
+        /********Wall actions**********/
+        DoWallAction();
+
+        //limit character speed on ground
         if (!PlayerStateManager.checkGroundState(GroundState.ONGROUND))
         {
             SetMaxVelocity(20f);
         }
+        //if player state is wallrunning, do wallrun.
         if (PlayerStateManager.checkPlayerState(PlayerState.WALLRUNNING)) 
         {
             DoWallrun();
         }
+        //can player wallrun?
         if (PlayerStateManager.checkWallRunState(WallRunState.ABLE)) 
         {
+            //do camera tilt
             DoCameraTilt();
+            //when player inputs jump next to a wall do wall run.
             if (jumpAction.WasPerformedThisFrame())
             {
                 PlayerStateManager.UpdatePlayerState(PlayerState.WALLRUNNING);
@@ -164,6 +188,7 @@ public class PlayerMovementV2 : MonoBehaviour
         }
         else if (PlayerStateManager.checkWallRunState(WallRunState.UNABLE) && tilt != 0)
         {
+            //otherwise stop camera tilt
             StopCameraTilt();
         }
         if (PlayerStateManager.checkPlayerState(PlayerState.IDLE) && PlayerStateManager.checkJumpState(JumpState.NOT_JUMPING))
@@ -176,9 +201,11 @@ public class PlayerMovementV2 : MonoBehaviour
                 }
             }
         }
+        //Wallrun Jump
         if (PlayerStateManager.CanWallJump && jumpAction.WasPerformedThisFrame()) {
             DoWallJump();
         }
+        //Wallrun Jump
         if (PlayerStateManager.WRState == WallRunState.UNABLE && 
             WallDetection.state == WallState.NOWALL &&
             PlayerStateManager.state == PlayerState.WALLRUNNING)
@@ -215,6 +242,13 @@ public class PlayerMovementV2 : MonoBehaviour
         if (movement.ReadValue<Vector2>().x != 0 || movement.ReadValue<Vector2>().y != 0) {
             OnWalk();
         }
+
+        if (movement.ReadValue<Vector2>().x == 0 && movement.ReadValue<Vector2>().y == 0) {
+            if (!PlayerStateManager.AboveWRThreshold)
+            {
+                _rb.velocity = _rb.velocity * 0.85f;
+            }
+        }
     }
 
     private void DoLook() 
@@ -232,8 +266,12 @@ public class PlayerMovementV2 : MonoBehaviour
         if (PlayerStateManager.state == PlayerState.WALLRUNNING) {
             return;
         }
+        var vertical = movement.ReadValue<Vector2>().y;
+        var horizontal = movement.ReadValue<Vector2>().x;
+
         moveDirection = (transform.right * movement.ReadValue<Vector2>().x + transform.forward * movement.ReadValue<Vector2>().y).normalized;
-        _rb.AddForce(moveDirection * walkSpeed, ForceMode.Acceleration);
+        
+        _rb.AddForce(moveDirection * walkSpeed - _rb.velocity, ForceMode.Acceleration);
 
         if (PlayerStateManager.checkPlayerState(PlayerState.WALLRUNNING)) {
             SetMaxVelocity(50f);
@@ -249,8 +287,12 @@ public class PlayerMovementV2 : MonoBehaviour
 
     private void OnRun()
     {
-        if (PlayerStateManager.state != PlayerState.CROUCH) {
-            walkSpeed = runSpeed;
+        var vertical = movement.ReadValue<Vector2>().y;
+        if (vertical > 0)
+        {
+            if (PlayerStateManager.state != PlayerState.CROUCH) {
+                walkSpeed = runSpeed;
+            }
         }
     }
 
@@ -290,6 +332,180 @@ public class PlayerMovementV2 : MonoBehaviour
     private void DoRun(InputAction.CallbackContext callback) 
     {
         
+    }
+
+    void DoWallAction()
+    {
+        /********Wall actions**********/
+
+        //reset condition when player is on ground
+        if (!PlayerStateManager.AboveWRThreshold) 
+        {
+            cc.material = slippery;
+            bWallBounce = false;
+            bWallStick = false;
+            bWallMoveInput = false;
+            m_CD.ResetCDTimer();
+            return;
+        }
+
+        if (!WallDetection.frontWallhit.transform) return;
+        var target = WallDetection.frontWallhit.transform.position - transform.position;
+        //get the angle between rigidbody velocity and negative hit normal
+        var angle = Vector3.Angle(target, transform.forward);
+        //player looking away from the wall
+        if (angle >= 90) return;
+
+        //velocity angle towards wall
+        var VelocityTowardsWall = Vector2.Angle(new Vector2(target.x, target.z), new Vector2(_rb.velocity.x, _rb.velocity.z));
+        //velocity magnitude
+        var VelocityMagnitude = _rb.velocity.magnitude;
+        
+        //player is not sticking to a wall
+        if(!bWallStick) 
+        {
+            _rb.useGravity = true;
+
+            //conditions for wall stick
+
+            //when player is coming in at a certain velocity towards wall
+            if (VelocityTowardsWall < 90 && !m_CD.bCDEnd())
+            {
+                SavedVelocity = _rb.velocity;
+                bWallStick = true;
+            }
+            //when player input forward action
+            if (movement.ReadValue<Vector2>().y > 0 && !m_CD.bCDEnd())
+            {
+                bWallStick = true;
+            }
+        }
+        //player is sticking to a wall
+        else if(bWallStick) 
+        {
+            //wall stick characteristic
+            _rb.useGravity = false;
+            _rb.velocity = Vector3.zero;
+            _rb.AddForce(-WallDetection.frontWallhit.normal * 800f); //apply force towards the wall to compensate player drifting away from wall
+
+            //set and start cooldown when player initially sticks to wall
+            m_CD.SetCDTimer(1/3f);
+            m_CD.StartCDTimer(m_CD);
+
+            //within this time frame if there is no input
+            if  (!bWallBounce && !bWallMoveInput)
+            {
+                if (m_CD.bCDEnd())
+                {
+                    cc.material = slippery;
+                    bWallStick = false;
+                    _rb.useGravity = true;
+                    m_CD.EndCDTimer();
+                }
+                else 
+                {
+                    //change physics material
+                    cc.material = maxFriction;
+                }
+            } 
+            
+
+            //player side input to wall 
+            if (movement.ReadValue<Vector2>().x != 0)
+            {
+                //set and start cooldown when player sticks to wall
+                m_CD.SetCDTimer(2.5f);
+                m_CD.StartCDTimer(m_CD);
+
+                if (m_CD.bCDEnd())
+                {
+                    cc.material = slippery;
+                    bWallStick = false;
+                    _rb.useGravity = true;
+                    m_CD.EndCDTimer();
+                }
+                else 
+                {
+                    //change physics material
+                    cc.material = maxFriction;
+                    Debug.Log("Move to side");
+                    walkSpeed = WallSideWalkSpeed;
+                    bWallMoveInput = true;
+                }
+            }
+
+            //player climbing (forward input to wall) 
+            if (movement.ReadValue<Vector2>().y > 0) 
+            {
+                //set and start cooldown when player sticks to wall
+                m_CD.SetCDTimer(2.5f);
+                m_CD.StartCDTimer(m_CD);
+
+                if (m_CD.bCDEnd())
+                {
+                    DoJump();
+
+                    cc.material = slippery;
+                    bWallStick = false;
+                    _rb.useGravity = true;
+                    m_CD.EndCDTimer();
+                }
+                else 
+                {
+                    //change physics material
+                    cc.material = maxFriction;
+                    Debug.Log("climb");
+                    _rb.AddForce(transform.up * wallClimbSpeed);
+                    bWallMoveInput = true;
+                }
+            }
+
+            //player away input from wall
+            if (movement.ReadValue<Vector2>().y < 0) 
+            {
+                bWallStick = false;
+                _rb.useGravity = true;
+                bWallMoveInput = true;
+                cc.material = slippery;
+            }
+
+            if (bWallMoveInput)
+            {
+                if (m_CD.bCDEnd())
+                {
+                    cc.material = slippery;
+                    bWallStick = false;
+                    _rb.useGravity = true;
+                    m_CD.EndCDTimer();
+                }
+                else 
+                {
+                    //change physics material
+                    cc.material = maxFriction;
+                }
+            }
+
+            if (!bWallMoveInput) {
+                //player jump input
+                if (jumpAction.WasPerformedThisFrame() && !bWallMoveInput && !bWallBounce) 
+                {
+                    _rb.useGravity = true;
+                    bWallStick = false;
+                    
+                    //reset physics material
+                    cc.material = slippery;
+
+                    //reflect and apply new velocity
+                    _rb.velocity = Vector3.Reflect(SavedVelocity, WallDetection.frontWallhit.normal);
+                    //Do jump action
+                    DoJump();
+
+                    bWallBounce = true;
+                    //reset saved velocity
+                    SavedVelocity = Vector3.zero;
+                }
+            }
+        }
     }
 
     public void DoWallrun() 
