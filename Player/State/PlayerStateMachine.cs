@@ -225,7 +225,7 @@ public class PlayerStateMachine : MonoBehaviour
     private void OnRun()
     {
         if (PlayerStateManager.state != PlayerState.CROUCH) {
-            walkSpeed = runSpeed;
+            // walkSpeed = runSpeed;
         }
     }
 

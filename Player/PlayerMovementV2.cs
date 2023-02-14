@@ -25,6 +25,7 @@ public class PlayerMovementV2 : MonoBehaviour
 
     [Header("CooldownTimer")]
     public CooldownManager m_CD;
+    public CooldownManager m_SlideCD;
 
     [Header("Walking")]
 	float runSpeed; 
@@ -112,8 +113,8 @@ public class PlayerMovementV2 : MonoBehaviour
         Tactical1 = InputManager.inputActions.Player.Tactical1;
         InputManager.inputActions.Player.MouseX.performed += ctx => mouseInput.x = ctx.ReadValue<float>();
         InputManager.inputActions.Player.MouseY.performed += ctx => mouseInput.y = ctx.ReadValue<float>();
-        InputManager.inputActions.Player.Run.performed += DoRun;
-        InputManager.inputActions.Player.Run.canceled += DoWalk;
+        // InputManager.inputActions.Player.Run.performed += DoRun;
+        // InputManager.inputActions.Player.Run.canceled += DoWalk;
     }
 
     private void Start()
@@ -128,6 +129,7 @@ public class PlayerMovementV2 : MonoBehaviour
         DisableCursor();
 
         m_CD = new CooldownManager();
+        m_SlideCD = new CooldownManager();
         // if (WeaponStateManager.WeaponState == WeaponState.BAREHAND) EnableBareHand();
         // if (WeaponStateManager.WeaponState == WeaponState.GRAPPLINGHOOK) EnableGrapple();
     }
@@ -143,6 +145,8 @@ public class PlayerMovementV2 : MonoBehaviour
         {
             DoLook();
         }
+
+        /*************JUMP***************/
         if (jumpAction.WasPerformedThisFrame()) 
         {
             if (PlayerStateManager.checkWallRunState(WallRunState.UNABLE) && 
@@ -151,6 +155,8 @@ public class PlayerMovementV2 : MonoBehaviour
                 DoJump();
             }
         }
+
+        /*************CROUCHING************/
         if (crouchAction.IsPressed()) 
         {
             DoStartCrouch();
@@ -161,6 +167,12 @@ public class PlayerMovementV2 : MonoBehaviour
                 DoStopCrouch();
             }
         }
+
+        /*************SLIDING****************/
+        if (PlayerStateManager.checkPlayerState(PlayerState.SLIDE))
+        {
+            DoSlide();
+        } 
 
         /********Wall actions**********/
         DoWallAction();
@@ -239,14 +251,21 @@ public class PlayerMovementV2 : MonoBehaviour
 
     private void FixedUpdate() 
     {
+        /*********WALKING**********/
         if (movement.ReadValue<Vector2>().x != 0 || movement.ReadValue<Vector2>().y != 0) {
             OnWalk();
         }
 
+        //player no inputs
         if (movement.ReadValue<Vector2>().x == 0 && movement.ReadValue<Vector2>().y == 0) {
+            //when on ground
             if (!PlayerStateManager.AboveWRThreshold)
             {
-                _rb.velocity = _rb.velocity * 0.85f;
+                if (!PlayerStateManager.checkPlayerState(PlayerState.SLIDE))
+                {
+                    //per frame retain 85% velocity 
+                    _rb.velocity = _rb.velocity * 0.85f;
+                } 
             }
         }
     }
@@ -277,12 +296,11 @@ public class PlayerMovementV2 : MonoBehaviour
             SetMaxVelocity(50f);
         }
 
-        if (PlayerStateManager.state == PlayerState.RUN) {
-            SetMaxVelocity(20f);
-        } else if (PlayerStateManager.state == PlayerState.WALK) {
-            SetMaxVelocity(10f);
+        if (PlayerStateManager.checkPlayerState(PlayerState.RUN)) {
+            DoRun();
+        } else if (PlayerStateManager.checkPlayerState(PlayerState.WALK)) {
+            DoWalk();
         } 
-        
     }
 
     private void OnRun()
@@ -298,11 +316,13 @@ public class PlayerMovementV2 : MonoBehaviour
 
     private void DoStartCrouch() 
     {
+        //adjust camera height
         cc.height = cc.height/2;
         cc.center = new Vector3 (0f, cc.center.y / 2, 0f);
         float groundVelocity = new Vector2(_rb.velocity.x, _rb.velocity.z).magnitude;
         mainCam.transform.position = new Vector3(transform.position.x, transform.position.y + 1, transform.position.z);
         if (groundVelocity > 7) {
+            PlayerStateManager.UpdatePlayerState(PlayerState.SLIDE);
             walkSpeed = crouchSpeed; //sliding
         } else if (groundVelocity <= 7) {
             walkSpeed = initialSpeed * 0.75f; // crouch walking
@@ -318,20 +338,66 @@ public class PlayerMovementV2 : MonoBehaviour
         walkSpeed = initialSpeed;
     } 
 
+    void DoSlide()
+    {
+        m_SlideCD.SetCDTimer(0.7f);
+        m_SlideCD.StartCDTimer(m_SlideCD);
+
+        //cooldown ended
+        if (m_SlideCD.bCDEnd())
+        {
+            //reset velocity to zero
+            _rb.velocity = Vector3.zero;
+            m_SlideCD.EndCDTimer();
+            m_SlideCD.ResetCDTimer();
+        }
+        //ongoing cooldown timer
+        else 
+        {
+            //conditions to reset timer
+                //player crouch spamming
+                //above threshold
+            if (crouchAction.WasPerformedThisFrame()
+               || PlayerStateManager.AboveWRThreshold  )
+            {
+                m_SlideCD.ResetCDTimer();
+            }
+            if (PlayerStateManager.AboveWRThreshold) 
+            {
+                m_SlideCD.ResetCDTimer();
+            }
+        }
+    }
 
     private void DoJump() 
     {
         _rb.AddForce(transform.up * jumpSpeed, ForceMode.Impulse);
     }
 
-    private void DoWalk(InputAction.CallbackContext callback) 
+    private void DoWalk() 
     {
-        walkSpeed = initialSpeed;
+        // walkSpeed = initialSpeed;
+        SetMaxVelocity(10f);
     }
 
-    private void DoRun(InputAction.CallbackContext callback) 
+    private void DoRun() 
     {
-        
+        var vertical = movement.ReadValue<Vector2>().y;
+        //forward input
+        if (vertical > 0)
+        {
+            //run speed
+            if (PlayerStateManager.state != PlayerState.CROUCH) {
+                // walkSpeed = runSpeed;
+                SetMaxVelocity(20f);
+            } 
+        }
+        //other input
+        else 
+        {
+            //walk speed
+            DoWalk();
+        }
     }
 
     void DoWallAction()
@@ -349,7 +415,33 @@ public class PlayerMovementV2 : MonoBehaviour
             return;
         }
 
-        if (!WallDetection.frontWallhit.transform) return;
+        //condition when player is climbing and have their back to the wall
+        if (WallDetection.backWallhit.transform) 
+        {
+            if (PlayerStateManager.AboveWRThreshold && !PlayerStateManager.checkPlayerState(PlayerState.WALLRUNNING))
+            {
+                _rb.useGravity = true;
+                cc.material = slippery;
+                bWallBounce = false;
+                bWallStick = false;
+                bWallMoveInput = false;
+                m_CD.ResetCDTimer();
+            }
+        }
+
+        if (!WallDetection.frontWallhit.transform) 
+        {
+            if (PlayerStateManager.AboveWRThreshold)
+            {
+                _rb.useGravity = true;
+                cc.material = slippery;
+                bWallBounce = false;
+                bWallStick = false;
+                bWallMoveInput = false;
+                m_CD.ResetCDTimer();
+                return;
+            }
+        }
         var target = WallDetection.frontWallhit.transform.position - transform.position;
         //get the angle between rigidbody velocity and negative hit normal
         var angle = Vector3.Angle(target, transform.forward);
@@ -366,7 +458,7 @@ public class PlayerMovementV2 : MonoBehaviour
         {
             _rb.useGravity = true;
 
-            //conditions for wall stick
+            //conditions to wall stick
 
             //when player is coming in at a certain velocity towards wall
             if (VelocityTowardsWall < 90 && !m_CD.bCDEnd())
