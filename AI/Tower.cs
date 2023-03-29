@@ -21,5 +21,6 @@ public class Tower : MonoBehaviour
     public void PayTowerCost()
     {
         TowerManager.Coins -= cost;
+        Debug.Log("Test");
     }
 }
