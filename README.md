@@ -10,4 +10,4 @@ Player UI:
 https://github.com/JunjiOtsuka/FPS_Puzzle.v2/blob/main/UI/UITextManager.cs
 
 Demo version:
-itch.io
+https://junji-otsuka.itch.io/fps-puzzle-demo
