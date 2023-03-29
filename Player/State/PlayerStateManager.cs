@@ -101,6 +101,12 @@ public class PlayerStateManager : MonoBehaviour
             UpdatePlayerState(PlayerState.GRAPPLING);
         } 
 
+        //Ledge Hang
+        // if (LedgeDetector.bLedgeHit) 
+        // {
+        //     UpdatePlayerState(PlayerState.LEDGE);
+        // } 
+
         switch (state) {
             case PlayerState.IDLE:
             {

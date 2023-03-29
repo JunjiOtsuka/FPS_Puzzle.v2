@@ -11,6 +11,8 @@
     WALK,
     RUN,
     JUMP, 
+    LEDGE,
+    MANTLE,
     wallStick, 
     wallClimb, 
     wallRun, 

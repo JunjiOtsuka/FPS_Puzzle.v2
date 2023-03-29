@@ -146,6 +146,54 @@ public class PlayerMovementV2 : MonoBehaviour
             DoLook();
         }
 
+        /*************LEDGE***************/
+        if (LedgeDetector.state == LedgeDetector.LedgeState.LEDGE)
+        {
+            Debug.Log("LEDGE");
+            if (!PlayerStateManager.checkPlayerState(PlayerState.MANTLE))
+            {
+                _rb.useGravity = false;
+                _rb.velocity = Vector3.zero;
+            }
+            // _rb.AddForce(-LedgeDetector.ledgeHit.normal * 100.0f, ForceMode.Force);
+
+            if (movement.ReadValue<Vector2>().y > 0) {
+                cc.material = slippery;
+                PlayerStateManager.UpdatePlayerState(PlayerState.MANTLE);
+            }
+        }
+
+        if (PlayerStateManager.checkPlayerState(PlayerState.MANTLE))
+        {
+            Debug.Log("MANTLE");
+            cc.material = slippery;
+            if (!LedgeFloorDetector.bLedgeFloorHit)
+            {
+                _rb.AddForce(transform.up * 1000.0f, ForceMode.Force);
+                _rb.AddForce(-LedgeFloorDetector.ledgeFloorHit.normal * 300.0f, ForceMode.Force);
+            } else {
+                _rb.useGravity = true;
+                _rb.velocity = Vector3.zero;
+                _rb.AddForce(-LedgeFloorDetector.ledgeFloorHit.normal * 300.0f, ForceMode.Impulse);
+                PlayerStateManager.UpdatePlayerState(PlayerState.IDLE);
+            }
+            // _rb.AddForce(-LedgeDetector.ledgeHit.normal * 300.0f, ForceMode.Force);
+            // float startTime = Time.time; 
+
+            // Vector3 destination = -LedgeDetector.ledgeHit.point * 2.0f  + new Vector3 (0, LedgeDetector.ledgeHit.point.y + 2.0f, 0);
+
+            // float journeyLength = Vector3.Distance(transform.position, destination);
+
+            // // Distance moved equals elapsed time times speed..
+            // float distCovered = (Time.time - startTime) * 5.0f;
+
+            // // Fraction of journey completed equals current distance divided by total distance.
+            // float fractionOfJourney = distCovered / journeyLength;
+
+            // // Set our position as a fraction of the distance between the markers.
+            // transform.position = Vector3.Lerp(transform.position, LedgeDetector.ledgeHit.point, fractionOfJourney);
+        }
+
         /*************JUMP***************/
         if (jumpAction.WasPerformedThisFrame()) 
         {
@@ -174,8 +222,8 @@ public class PlayerMovementV2 : MonoBehaviour
             DoSlide();
         } 
 
-        /********Wall actions**********/
-        DoWallAction();
+        // /********Wall actions**********/
+        // DoWallAction();
 
         //limit character speed on ground
         if (!PlayerStateManager.checkGroundState(GroundState.ONGROUND))
@@ -253,6 +301,17 @@ public class PlayerMovementV2 : MonoBehaviour
     {
         /*********WALKING**********/
         if (movement.ReadValue<Vector2>().x != 0 || movement.ReadValue<Vector2>().y != 0) {
+            if (PlayerStateManager.checkPlayerState(PlayerState.MANTLE))
+            {
+                if (movement.ReadValue<Vector2>().x != 0 || movement.ReadValue<Vector2>().y != 0) {
+                    return;
+                }
+                if (Vector3.zero == LedgeDetector.ledgeHit.normal) 
+                {
+                    return;
+                }
+            }
+
             OnWalk();
         }
 
@@ -268,6 +327,10 @@ public class PlayerMovementV2 : MonoBehaviour
                 } 
             }
         }
+
+        /********Wall actions**********/
+        DoWallAction();
+
     }
 
     private void DoLook() 
@@ -362,10 +425,6 @@ public class PlayerMovementV2 : MonoBehaviour
             {
                 m_SlideCD.ResetCDTimer();
             }
-            if (PlayerStateManager.AboveWRThreshold) 
-            {
-                m_SlideCD.ResetCDTimer();
-            }
         }
     }
 
@@ -403,6 +462,17 @@ public class PlayerMovementV2 : MonoBehaviour
     void DoWallAction()
     {
         /********Wall actions**********/
+
+        if (GrapplingHook.IsGrappling())
+        {
+            Debug.Log("Check reset");
+            return;
+        }
+
+        if (PlayerStateManager.checkPlayerState(PlayerState.MANTLE))
+        {
+            return;
+        }
 
         //reset condition when player is on ground
         if (!PlayerStateManager.AboveWRThreshold) 
@@ -442,6 +512,12 @@ public class PlayerMovementV2 : MonoBehaviour
                 return;
             }
         }
+
+        if (PlayerStateManager.checkPlayerState(PlayerState.MANTLE))
+        {
+            return;
+        }
+
         var target = WallDetection.frontWallhit.transform.position - transform.position;
         //get the angle between rigidbody velocity and negative hit normal
         var angle = Vector3.Angle(target, transform.forward);
@@ -529,27 +605,7 @@ public class PlayerMovementV2 : MonoBehaviour
             //player climbing (forward input to wall) 
             if (movement.ReadValue<Vector2>().y > 0) 
             {
-                //set and start cooldown when player sticks to wall
-                m_CD.SetCDTimer(2.5f);
-                m_CD.StartCDTimer(m_CD);
-
-                if (m_CD.bCDEnd())
-                {
-                    DoJump();
-
-                    cc.material = slippery;
-                    bWallStick = false;
-                    _rb.useGravity = true;
-                    m_CD.EndCDTimer();
-                }
-                else 
-                {
-                    //change physics material
-                    cc.material = maxFriction;
-                    Debug.Log("climb");
-                    _rb.AddForce(transform.up * wallClimbSpeed);
-                    bWallMoveInput = true;
-                }
+                DoClimb();
             }
 
             //player away input from wall
@@ -673,6 +729,31 @@ public class PlayerMovementV2 : MonoBehaviour
         // } else if (IsInteracting == true) {
         //     IsInteracting = false;
         // }
+    }
+
+    private void DoClimb()
+    {
+        //set and start cooldown when player sticks to wall
+        m_CD.SetCDTimer(2.5f);
+        m_CD.StartCDTimer(m_CD);
+
+        if (m_CD.bCDEnd())
+        {
+            DoJump();
+
+            cc.material = slippery;
+            bWallStick = false;
+            _rb.useGravity = true;
+            m_CD.EndCDTimer();
+        }
+        else 
+        {
+            //change physics material
+            cc.material = maxFriction;
+            Debug.Log("climb");
+            _rb.AddForce(transform.up * wallClimbSpeed);
+            bWallMoveInput = true;
+        }
     }
 
     private void OnEnterOption()
