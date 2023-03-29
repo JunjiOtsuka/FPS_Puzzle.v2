@@ -12,6 +12,7 @@ public class UITextManager : MonoBehaviour
 
     void Update()
     {
+        //Show toggle switch UI interaction
         if (PlayerInteract.IsInteracting) 
         {
             switchInteractText.SetActive(true);
@@ -20,6 +21,7 @@ public class UITextManager : MonoBehaviour
         {
             switchInteractText.SetActive(false);
         }
+        //Show box UI interaction
         if (Box.IsInteracting) 
         {
             cubeInteractText.SetActive(true);
@@ -28,6 +30,7 @@ public class UITextManager : MonoBehaviour
         {
             cubeInteractText.SetActive(false);
         }
+        //Show grapple UI interaction
         if (GrapplingHook.CanGrapple) 
         {
             grapplingInteractText.SetActive(true);
@@ -36,6 +39,7 @@ public class UITextManager : MonoBehaviour
         {
             grapplingInteractText.SetActive(false);
         }
+        //Show wall run UI
         if (PlayerStateManager.checkWallRunState(WallRunState.ABLE) && !PlayerStateManager.IsWallRunning) 
         {
             wallrunText.SetActive(true);
@@ -44,6 +48,7 @@ public class UITextManager : MonoBehaviour
         {
             wallrunText.SetActive(false);
         }
+        //Show wall jump UI
         if (PlayerStateManager.CanWallJump) 
         {
             walljumpText.SetActive(true);
